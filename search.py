@@ -17,7 +17,7 @@ wiki=WikipediaQueryRun(api_wrapper=api_wrapper)
 search=DuckDuckGoSearchRun(name="Search")
 
 
-st.title("🤖 NileAI - Your AI Search Companion")
+st.title("🤖 NileAI - Smart AI Chat")
 """
 Welcome to NileSearch, your AI-powered chat agent for real-time web search and insights.
 This app uses `StreamlitCallbackHandler` to display the agent's thoughts and actions transparently.
