@@ -1,4 +1,5 @@
 import os
+import time  # Added for handling retries
 import streamlit as st
 from langchain_groq import ChatGroq
 from langchain_community.tools import ArxivQueryRun, WikipediaQueryRun, DuckDuckGoSearchRun
@@ -6,6 +7,7 @@ from langchain_community.utilities import WikipediaAPIWrapper, ArxivAPIWrapper
 from langchain.agents import initialize_agent, AgentType
 from langchain.callbacks import StreamlitCallbackHandler
 from dotenv import load_dotenv
+from duckduckgo_search.exceptions import RatelimitException  # Import the exception
 
 # Load environment variables from .env file
 load_dotenv()  
@@ -51,6 +53,19 @@ if prompt := st.chat_input(placeholder="What is machine learning?"):
 
     with st.chat_message("assistant"):
         st_cb = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False)
-        response = search_agent.run(st.session_state.messages, callbacks=[st_cb])
-        st.session_state.messages.append({'role': 'assistant', 'content': response})
-        st.write(response)
+        
+        # Retry mechanism
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                response = search_agent.run(st.session_state.messages, callbacks=[st_cb])
+                st.session_state.messages.append({'role': 'assistant', 'content': response})
+                st.write(response)
+                break  # Exit the loop if successful
+            except RatelimitException:
+                if attempt < max_retries - 1:  # Don't wait on the last attempt
+                    wait_time = 2 ** attempt  # Exponential backoff
+                    time.sleep(wait_time)  # Wait before retrying
+                else:
+                    st.write("Rate limit exceeded. Please try again later.")
+                    break  # Exit the loop after max retries
